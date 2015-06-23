@@ -9,6 +9,10 @@
 class ShadowSocks
 {
 
+    /**
+     * setting
+     * @var unknown
+     */
     protected static $conf = array();
 
     /**
@@ -51,7 +55,6 @@ class ShadowSocks
     {
         $ip = empty(self::$conf['ip']) ? '0.0.0.0' : self::$conf['ip'];
         $this->serv = new swoole_server($ip, self::$conf['port'], SWOOLE_PROCESS, SWOOLE_TCP);
-        $this->serv->set(['timeout' => 1,'poll_thread_num' => 1,'worker_num' => 4,'backlog' => 128,'dispatch_mode' => 2]);
         $this->serv->on('connect', [$this,'onConnect']);
         $this->serv->on('receive', [$this,'onReceive']);
         $this->serv->on('close', [$this,'onClose']);
@@ -65,7 +68,6 @@ class ShadowSocks
 
     public function onReceive($serv, $fd, $from_id, $rdata)
     {
-        //return $serv->close($fd);
         $client = Client::getInstance($fd);
         $data = $client->cryptor->decrypt($rdata);
         echo "\n\n\n\n" . str_repeat('#', 20), "\nquerytimes:", ++ $this->querytimes, "\n", str_repeat('#', 20), "\n=======================\nonReceive $from_id : $fd  lenght:" .
@@ -77,16 +79,15 @@ class ShadowSocks
                 return $serv->close($fd);
             }
             $client->init();
-            $header_len = $header[3];
-            if (strlen($data) > $header_len) {
-                $data = substr($data, $header_len);
+            if (strlen($data) > $header['length']) {
+                $data = substr($data, $header['length']);
                 $client->send($data);
             }
-            swoole_async_dns_lookup($header[1], 
-                function ($host, $ip) use($header, $fd)
+            swoole_async_dns_lookup($header['addr'], 
+                function ($host, $ip) use($header, $client)
                 {
                     echo "dnslookup >$fd, $host, $ip \n";
-                    Client::getInstance($fd)->connect(ip2long($ip), $header[2]);
+                    $client->connect(ip2long($ip), $header['port']);
                 });
         } else {
             echo "hasInit $fd true \n";
@@ -100,8 +101,11 @@ class ShadowSocks
         echo "Client: $fd Close.\n";
     }
 
-    public function start()
+    public function start($setting = array())
     {
+        $default = ['timeout' => 1,'poll_thread_num' => 1,'worker_num' => 4,'backlog' => 128,'dispatch_mode' => 2];
+        $setting = array_merge($default, $setting);
+        $this->serv->set($setting);
         $this->serv->start();
     }
 }

@@ -42,6 +42,6 @@ class Sock5
                 //echo "unsupported addrtype $addr_type\n";
                 return false;
         }
-        return array($addr_type,$dest_addr,$dest_port,$header_length);
+        return array('type' => $addr_type,'addr' => $dest_addr,'port' => $dest_port,'length' => $header_length);
     }
 }
