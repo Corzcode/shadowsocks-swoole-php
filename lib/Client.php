@@ -6,7 +6,7 @@ class Client
     /**
      * @var array
      */
-    protected $conf = ['host' => '','port' => ''];
+    protected $conf = ['host' => '','ip' => '','port' => ''];
 
     /**
      * @var Encryptor
@@ -86,28 +86,28 @@ class Client
 
     public function onConnect(swoole_client $cli)
     {
-        echo "*********cli $this->fd connect\n";
+        Trace::debug("*********cli {$this->fd} connect");
         $this->lock = false;
         $this->send();
     }
 
     public function onReceive(swoole_client $cli, $data)
     {
-        echo "*********cli {$this->fd} receive  lenght:" . strlen($data) . ".\n";
-        $this->serv->send($this->fd, $this->cryptor->encrypt($data));
+        Trace::debug("*********cli {$this->fd} receive  lenght:" . strlen($data) . ".");
+        false !== $this->serv->connection_info($this->fd) && $this->serv->send($this->fd, $this->cryptor->encrypt($data));
         $this->lock = false;
         $this->send();
     }
 
     public function onClose(swoole_client $cli)
     {
-        echo "*********cli {$this->fd} close\n";
+        Trace::debug("*********cli {$this->fd} close");
         $this->reconn = true;
     }
 
     public function onError(swoole_client $cli)
     {
-        echo "*********cli {$this->fd} error\n";
+        Trace::debug("*********cli {$this->fd} error");
         $this->serv->close($this->fd);
         $cli->close();
     }
@@ -119,7 +119,7 @@ class Client
             $this->queue->push($data);
         }
         if ($this->reconn) {
-            echo "*********cli $this->fd reconn \n";
+            Trace::debug("*********cli {$this->fd} reconn \n");
             $this->cli->connect($this->conf['ip'], $this->conf['port']);
             $this->reconn = false;
             $this->lock = true;
@@ -129,13 +129,15 @@ class Client
         } elseif (! $this->lock) {
             $this->lock = true;
             $data = $this->queue->shift();
-            echo "*********cli $this->fd send " . strlen($data) . "\n==================\n" . substr($data, 0, 50) . "...\n==============\n";
+            Trace::debug("*********cli $this->fd send " . strlen($data) . "\n==================\n" . substr($data, 0, 50) . "...\n==============");
+            Trace::info(sprintf("Host: %-25s %s", $this->conf['host'], strstr($data, "\n", true))); //;'Host:' . $this->conf['host'] . strstr($data, "\n", true)
             $this->cli->send($data);
         }
     }
 
-    public function init()
+    public function init($host)
     {
+        $this->conf['host'] = $host;
         $this->status = true;
         $this->cli = $cli = new swoole_client(SWOOLE_TCP, SWOOLE_SOCK_ASYNC);
         $cli->on('connect', [$this,'onConnect']);
@@ -146,7 +148,8 @@ class Client
 
     public function connect($ip, $port)
     {
-        $this->conf = ['ip' => is_int($ip) ? long2ip($ip) : $ip,'port' => $port];
+        $this->conf['ip'] = is_int($ip) ? long2ip($ip) : $ip;
+        $this->conf['port'] = $port;
         $this->cli->connect($this->conf['ip'], $this->conf['port']);
     }
 
@@ -161,7 +164,7 @@ class Client
 
     public function __destruct()
     {
-        echo "*********cli $this->fd __destruct\n";
+        Trace::debug("*********cli $this->fd __destruct");
         if (isset($this->cli)) {
             $this->cli->isConnected() && $this->cli->close();
             unset($this->cli);
