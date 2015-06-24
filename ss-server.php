@@ -7,4 +7,4 @@ $confile = empty($argv['c']) ? __DIR__ . '/config.php' : getcwd() . '/' . $argv[
 if (! file_exists($confile)) {
     throw new Exception('config file is not exists');
 }
-ShadowSocks::getInstance(include $confile)->start(['daemonize' => DAEMON]);
+ShadowSocks::getInstance(include $confile)->start(['daemonize' => DAEMON,'worker_num' => 4]);
