@@ -2,8 +2,6 @@
 
 /**
  * sock5头解析
- * 
- * @author Corz
  */
 class Sock5
 {
