@@ -24,3 +24,8 @@ return [
     'method' => 'aes-256-cfb'
 ];
 ```
+
+其它
+------
+加密类与sock5头部参考
+https://github.com/walkor/shadowsocks-php
