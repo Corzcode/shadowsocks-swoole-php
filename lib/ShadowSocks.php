@@ -71,9 +71,10 @@ class ShadowSocks
         $client = Client::getInstance($fd);
         $data = $client->cryptor->decrypt($rdata);
         
-        Trace::debug("\n\n\n\n" . str_repeat('#', 20), "\nquerytimes:", ++ $this->querytimes, "\n", str_repeat('#', 20), 
-            "\n=======================\nonReceive {$from_id} : {$fd}  lenght:" . strlen($data) . " content:\n=======================\n" . substr($data, 0, 50) .
-                 "...\n======================="); 
+        Trace::debug(
+            "\n\n\n\n" . str_repeat('#', 20) . "\nquerytimes:" . ++ $this->querytimes . "\n" . str_repeat('#', 20) .
+                 "\n=======================\nonReceive {$from_id} : {$fd}  lenght:" . strlen($data) . " content:\n=======================\n" .
+                 substr($data, 0, 50) . "...\n=======================");
         if (false === $client->hasInit()) {
             $header = Sock5::parseHeader($data);
             if (! $header) {
@@ -85,7 +86,7 @@ class ShadowSocks
                 $client->send($data);
             }
             swoole_async_dns_lookup($header['addr'], 
-                function ($host, $ip) use($header, $client)
+                function ($host, $ip) use($header, $client, $fd)
                 {
                     Trace::debug("dnslookup >$fd, $host, $ip ");
                     $client->connect(ip2long($ip), $header['port']);

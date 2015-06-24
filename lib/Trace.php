@@ -16,7 +16,7 @@ class Trace
     public static function debug($info)
     {
         if (self::isDebug()) {
-            echo $info . PHP_EOL;
+            echo var_export($info, true) . PHP_EOL;
         }
     }
 
@@ -27,7 +27,7 @@ class Trace
     public static function info($info)
     {
         if (! DAEMON) {
-            echo $info . PHP_EOL;
+            echo var_export($info, true) . PHP_EOL;
         }
     }
 
